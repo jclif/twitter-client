@@ -1,6 +1,3 @@
-require 'launchy'
-require 'oauth'
-require 'yaml'
 require 'singleton'
 
 class TwitterSession

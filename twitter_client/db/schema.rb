@@ -11,20 +11,32 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20130909190120) do
+ActiveRecord::Schema.define(:version => 20130909211637) do
+
+  create_table "follows", :force => true do |t|
+    t.string   "twitter_follower_id", :null => false
+    t.string   "twitter_followee_id", :null => false
+    t.datetime "created_at",          :null => false
+    t.datetime "updated_at",          :null => false
+  end
+
+  add_index "follows", ["twitter_followee_id"], :name => "index_follows_on_twitter_followee_id"
+  add_index "follows", ["twitter_follower_id", "twitter_followee_id"], :name => "index_follows_on_twitter_follower_id_and_twitter_followee_id", :unique => true
+  add_index "follows", ["twitter_follower_id"], :name => "index_follows_on_twitter_follower_id"
 
   create_table "statuses", :force => true do |t|
     t.string   "body",              :null => false
-    t.integer  "twitter_status_id", :null => false
+    t.string   "twitter_status_id", :null => false
     t.datetime "created_at",        :null => false
     t.datetime "updated_at",        :null => false
+    t.string   "user_id",           :null => false
   end
 
   add_index "statuses", ["twitter_status_id"], :name => "index_statuses_on_twitter_status_id", :unique => true
 
   create_table "users", :force => true do |t|
     t.string   "screen_name",     :null => false
-    t.integer  "twitter_user_id", :null => false
+    t.string   "twitter_user_id", :null => false
     t.datetime "created_at",      :null => false
     t.datetime "updated_at",      :null => false
   end
