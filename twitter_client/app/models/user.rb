@@ -13,6 +13,32 @@ class User < ActiveRecord::Base
     primary_key: :twitter_user_id
   )
 
+  has_many(
+    :inbound_follows,
+    class_name: "Follow",
+    foreign_key: :twitter_followee_id,
+    primary_key: :twitter_user_id
+  )
+
+  has_many(
+    :outbound_follows,
+    class_name: "Follow",
+    foreign_key: :twitter_follower_id,
+    primary_key: :twitter_user_id
+  )
+
+  has_many(
+    :followed_users,
+    through: :outbound_follows,
+    source: :followee
+  )
+
+  has_many(
+    :followers,
+    through: :inbound_follows,
+    source: :follower
+  )
+
   def self.fetch_by_screen_name(screen_name)
     url = Addressable::URI.new(
         scheme: "https",
@@ -31,6 +57,32 @@ class User < ActiveRecord::Base
       screen_name: parsed["screen_name"],
       twitter_user_id: parsed["id_str"]
     )
+  end
+
+  def self.fetch_by_ids(ids)
+    ids.map do |id|
+      user = User.find_by_twitter_user_id(id)
+      if user.nil?
+        url = Addressable::URI.new(
+            scheme: "https",
+            host: "api.twitter.com",
+            path: "1.1/users/show.json",
+            query_values: {
+              id: id
+            }
+        ).to_s
+        user = User.parse_twitter_params(TwitterSession.get(url))
+        user.save
+      end
+
+      user
+    end
+  end
+
+  def fetch_followers
+  end
+
+  def sync_followers
   end
 
   def sync_statuses
