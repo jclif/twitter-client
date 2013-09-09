@@ -2,16 +2,24 @@ require 'addressable/uri'
 require 'rest-client'
 require 'nokogiri'
 require 'socket'
+require 'json'
 
 class IceCreamFinder
 
   KEY = "AIzaSyBwlxzfPWyu8LR6A8afji653PTjZ3u304E"
   C_SECRET = "VNYxnDlTzF6ilXQfix4Iz_s6"
 
-  # Find current location with hostip
+  attr_accessor :location, :icecreams
+
+  def initialize
+    self.location = current_location
+    self.icecreams = find_ice_cream
+  end
+
   def current_location
     ip = local_ip
     ip = "38.89.128.21" if ip == "10.1.21.252"
+    location = { lat: 40.730804, lng: -73.9914 }
 
     current = Addressable::URI.new(
       scheme: "http",
@@ -21,11 +29,32 @@ class IceCreamFinder
     ).to_s
 
     RestClient.get(current)
+
+    # be fancy about finding location...later
+
+    location
   end
 
-  # Use places api to find ice cream places
+  def find_ice_cream
+    google_url = Addressable::URI.new(
+        scheme: "https",
+        host: "maps.googleapis.com",
+        path: "maps/api/place/nearbysearch/json",
+        query_values: {
+          location: "#{self.location[:lat]},#{self.location[:lng]}",
+          radius: 2000,
+          sensor: false,
+          types: "food",
+          keyword: "icecream",
+          key: KEY
+        }
+      ).to_s
 
-  # parse googles response
+    JSON.parse(RestClient.get(google_url))["results"].map do |result|
+      result["geometry"]["location"]
+    end
+  end
+
 
   def local_ip
     origin = Socket.do_not_reverse_lookup
@@ -42,5 +71,5 @@ end
 
 if __FILE__ == $0
   i = IceCreamFinder.new
-  puts i.current_location
+  p i.find_ice_cream
 end
