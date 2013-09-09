@@ -51,8 +51,35 @@ class IceCreamFinder
       ).to_s
 
     JSON.parse(RestClient.get(google_url))["results"].map do |result|
-      result["geometry"]["location"]
+      result["geometry"]["location"].merge({"name" => result["name"]})
     end
+  end
+
+  def closest_ice_cream
+    icecreams_dir = icecreams.map do |icecream|
+      directions_url = Addressable::URI.new(
+        scheme: "https",
+        host: "maps.googleapis.com",
+        path: "maps/api/directions/json",
+        query_values: {
+          origin: "#{location[:lat]},#{self.location[:lng]}",
+          destination: "#{icecream["lat"]},#{icecream["lng"]}",
+          sensor: false,
+          mode: "walking"
+        }
+      ).to_s
+
+      result = {}
+
+      dir = JSON.parse(RestClient.get(directions))
+
+      result[:distance] = dir["routes"][0]["legs"][0]["duration"]["value"]
+      result[:steps] = dir["routes"][0]["legs"][0]["steps"]
+
+      result
+    end
+
+    icecreams_dir.sort { |x, y| x[:distance] <=> y[:distance] }.first
   end
 
 
